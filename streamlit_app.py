@@ -31,6 +31,10 @@ if "stats" not in st.session_state:
     st.session_state.stats = {}
 if "last_goal" not in st.session_state:
     st.session_state.last_goal = None
+if "sort_by" not in st.session_state:
+    st.session_state.sort_by = "P"
+if "show_all" not in st.session_state:
+    st.session_state.show_all = False
 
 def update_stats(goal):
     stats = st.session_state.stats
@@ -89,7 +93,7 @@ st.markdown("""
 st.title("🏒 Sabres Goal")
 
 goals = load_goals()
-st.caption(f"Random goal from {len(goals):,} Sabres regular-season goals, 2010–11 through 2025–26.")
+st.caption(f"Random goal from {len(goals):,} Sabres regular-season goals, 1990–91 through 2025–26.")
 
 # ── Button ─────────────────────────────────────────────────────────────────────
 
@@ -138,32 +142,70 @@ if st.session_state.stats:
     st.subheader("Leaderboard")
     st.caption("Goals, assists, and points from goals shown this session.")
 
+    # Sort controls
+    col_g, col_a, col_p, col_reset = st.columns([1, 1, 1, 2])
+    with col_g:
+        if st.button("Sort: G", type="primary" if st.session_state.sort_by == "G" else "secondary", use_container_width=True):
+            st.session_state.sort_by = "G"
+            st.session_state.show_all = False
+            st.rerun()
+    with col_a:
+        if st.button("Sort: A", type="primary" if st.session_state.sort_by == "A" else "secondary", use_container_width=True):
+            st.session_state.sort_by = "A"
+            st.session_state.show_all = False
+            st.rerun()
+    with col_p:
+        if st.button("Sort: P", type="primary" if st.session_state.sort_by == "P" else "secondary", use_container_width=True):
+            st.session_state.sort_by = "P"
+            st.session_state.show_all = False
+            st.rerun()
+    with col_reset:
+        if st.button("🗑  Reset Leaderboard", use_container_width=True):
+            st.session_state.stats = {}
+            st.session_state.last_goal = None
+            st.session_state.show_all = False
+            st.rerun()
+
+    sort_key = st.session_state.sort_by
     ranked = sorted(
         st.session_state.stats.items(),
-        key=lambda x: (-x[1]["P"], -x[1]["G"]),
+        key=lambda x: (-x[1][sort_key], -x[1]["P"]),
     )
 
-    # Build a simple HTML table (avoids pandas dependency)
+    visible    = ranked if st.session_state.show_all else ranked[:10]
+    remaining  = len(ranked) - len(visible)
+
+    def header_arrow(col):
+        return " ▼" if col == sort_key else ""
+
     rows = "".join(
-        f"<tr><td>{name}</td><td>{s['G']}</td><td>{s['A']}</td><td><strong>{s['P']}</strong></td></tr>"
-        for name, s in ranked
+        f"<tr><td style='padding:6px 8px;'>{name}</td>"
+        f"<td style='padding:6px 8px; text-align:center;'>{'<strong>' if sort_key=='G' else ''}{s['G']}{'</strong>' if sort_key=='G' else ''}</td>"
+        f"<td style='padding:6px 8px; text-align:center;'>{'<strong>' if sort_key=='A' else ''}{s['A']}{'</strong>' if sort_key=='A' else ''}</td>"
+        f"<td style='padding:6px 8px; text-align:center;'>{'<strong>' if sort_key=='P' else ''}{s['P']}{'</strong>' if sort_key=='P' else ''}</td></tr>"
+        for name, s in visible
     )
     st.markdown(f"""
     <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
         <thead>
             <tr style="border-bottom:2px solid #ccc; text-align:left;">
                 <th style="padding:6px 8px;">Player</th>
-                <th style="padding:6px 8px; text-align:center;">G</th>
-                <th style="padding:6px 8px; text-align:center;">A</th>
-                <th style="padding:6px 8px; text-align:center;">P</th>
+                <th style="padding:6px 8px; text-align:center;">G{header_arrow('G')}</th>
+                <th style="padding:6px 8px; text-align:center;">A{header_arrow('A')}</th>
+                <th style="padding:6px 8px; text-align:center;">P{header_arrow('P')}</th>
             </tr>
         </thead>
         <tbody>{rows}</tbody>
     </table>
     """, unsafe_allow_html=True)
 
-    st.markdown("")
-    if st.button("🗑  Reset Leaderboard"):
-        st.session_state.stats = {}
-        st.session_state.last_goal = None
-        st.rerun()
+    if remaining > 0:
+        st.markdown("")
+        if st.button(f"Show {remaining} more player{'s' if remaining != 1 else ''} ▼"):
+            st.session_state.show_all = True
+            st.rerun()
+    elif st.session_state.show_all and len(ranked) > 10:
+        st.markdown("")
+        if st.button("Show less ▲"):
+            st.session_state.show_all = False
+            st.rerun()
