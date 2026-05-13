@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import json
 import random
 from datetime import datetime
@@ -35,6 +36,8 @@ if "sort_by" not in st.session_state:
     st.session_state.sort_by = "P"
 if "show_all" not in st.session_state:
     st.session_state.show_all = False
+if "rob_ray" not in st.session_state:
+    st.session_state.rob_ray = False
 
 def update_stats(goal):
     stats = st.session_state.stats
@@ -100,9 +103,80 @@ st.caption(f"Random goal from {len(goals):,} Sabres regular-season goals, 1990�
 if st.button("🎲  Random Goal", type="primary", use_container_width=True):
     goal = random.choice(goals)
     st.session_state.last_goal = goal
+    st.session_state.rob_ray = (goal["scorer"].strip().lower() == "rob ray")
     update_stats(goal)
 
 # ── Goal display ───────────────────────────────────────────────────────────────
+
+ROB_RAY_FIREWORKS = """
+<canvas id="fireworks" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('fireworks');
+  const ctx    = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const COLORS = ['#fcb514','#003087','#ffffff','#ff4444','#44ff44','#ff44ff'];
+
+  function explode(x, y) {
+    for (let i = 0; i < 120; i++) {
+      const angle    = Math.random() * Math.PI * 2;
+      const speed    = Math.random() * 6 + 2;
+      const color    = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const size     = Math.random() * 4 + 1;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color, size,
+        decay: Math.random() * 0.015 + 0.01,
+        gravity: 0.12,
+      });
+    }
+  }
+
+  // Fire several bursts
+  const bursts = 10;
+  let fired = 0;
+  const interval = setInterval(() => {
+    explode(
+      Math.random() * canvas.width * 0.8 + canvas.width * 0.1,
+      Math.random() * canvas.height * 0.5 + canvas.height * 0.05
+    );
+    fired++;
+    if (fired >= bursts) clearInterval(interval);
+  }, 250);
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.98;
+      p.alpha -= p.decay;
+      if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle   = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (particles.length > 0 || fired < bursts) requestAnimationFrame(loop);
+    else canvas.remove();
+  }
+  loop();
+})();
+</script>
+"""
+
+if st.session_state.rob_ray:
+    components.html(ROB_RAY_FIREWORKS, height=0)
 
 goal = st.session_state.last_goal
 if goal:
