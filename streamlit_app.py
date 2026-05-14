@@ -111,55 +111,55 @@ if st.button("🎲  Random Goal", type="primary", use_container_width=True):
 # ── Goal display ───────────────────────────────────────────────────────────────
 
 ROB_RAY_FIREWORKS = """
-<canvas id="fireworks" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
 <script>
 (function() {
-  const canvas = document.getElementById('fireworks');
-  const ctx    = canvas.getContext('2d');
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const pdoc = window.parent.document;
+  const canvas = pdoc.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;';
+  pdoc.body.appendChild(canvas);
+
+  const pw  = window.parent.innerWidth;
+  const ph  = window.parent.innerHeight;
+  canvas.width  = pw;
+  canvas.height = ph;
+  const ctx = canvas.getContext('2d');
 
   const particles = [];
-  const COLORS = ['#fcb514','#003087','#ffffff','#ff4444','#44ff44','#ff44ff'];
+  const COLORS = ['#FCB514','#003087','#ffffff','#ff4444','#44ff44','#ff44ff'];
 
   function explode(x, y) {
     for (let i = 0; i < 120; i++) {
-      const angle    = Math.random() * Math.PI * 2;
-      const speed    = Math.random() * 6 + 2;
-      const color    = COLORS[Math.floor(Math.random() * COLORS.length)];
-      const size     = Math.random() * 4 + 1;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 6 + 2;
       particles.push({
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         alpha: 1,
-        color, size,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        size: Math.random() * 4 + 1,
         decay: Math.random() * 0.015 + 0.01,
         gravity: 0.12,
       });
     }
   }
 
-  // Fire several bursts
   const bursts = 10;
   let fired = 0;
   const interval = setInterval(() => {
     explode(
-      Math.random() * canvas.width * 0.8 + canvas.width * 0.1,
-      Math.random() * canvas.height * 0.5 + canvas.height * 0.05
+      Math.random() * pw * 0.8 + pw * 0.1,
+      Math.random() * ph * 0.5 + ph * 0.05
     );
-    fired++;
-    if (fired >= bursts) clearInterval(interval);
+    if (++fired >= bursts) clearInterval(interval);
   }, 250);
 
   function loop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, pw, ph);
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
-      p.x  += p.vx;
-      p.y  += p.vy;
-      p.vy += p.gravity;
-      p.vx *= 0.98;
+      p.x += p.vx;  p.y += p.vy;
+      p.vy += p.gravity;  p.vx *= 0.98;
       p.alpha -= p.decay;
       if (p.alpha <= 0) { particles.splice(i, 1); continue; }
       ctx.globalAlpha = p.alpha;
@@ -182,29 +182,32 @@ if st.session_state.rob_ray:
 
 if st.session_state.hat_trick_player:
     components.html(f"""
-    <div id="ht-banner" style="
-        position:fixed; top:0; left:0; width:100%; z-index:9998;
+    <script>
+    (function() {{
+      const pdoc   = window.parent.document;
+      const banner = pdoc.createElement('div');
+      banner.id    = 'ht-banner';
+      banner.textContent = '🎩 HAT TRICK — {st.session_state.hat_trick_player} 🎩';
+      banner.style.cssText = `
+        position:fixed; top:0; left:0; width:100%; z-index:99998;
         background: linear-gradient(90deg, #FCB514, #FFD966, #FCB514);
-        color: #003087; text-align:center;
+        color:#003087; text-align:center;
         font-size:2rem; font-weight:900; letter-spacing:0.05em;
         padding:0.6rem 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);
-        animation: slideDown 0.4s ease-out;
-    ">
-        🎩 HAT TRICK — {st.session_state.hat_trick_player} 🎩
-    </div>
-    <style>
-      @keyframes slideDown {{
-        from {{ transform: translateY(-100%); opacity:0; }}
-        to   {{ transform: translateY(0);    opacity:1; }}
-      }}
-    </style>
-    <script>
+        transform:translateY(-100%); opacity:0;
+        transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+      `;
+      pdoc.body.appendChild(banner);
+      requestAnimationFrame(() => {{
+        banner.style.transform = 'translateY(0)';
+        banner.style.opacity   = '1';
+      }});
       setTimeout(() => {{
-        const b = document.getElementById('ht-banner');
-        b.style.transition = 'opacity 0.8s';
-        b.style.opacity = '0';
-        setTimeout(() => b.remove(), 800);
+        banner.style.transition = 'opacity 0.8s';
+        banner.style.opacity    = '0';
+        setTimeout(() => banner.remove(), 800);
       }}, 3500);
+    }})();
     </script>
     """, height=0)
 
