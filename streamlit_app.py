@@ -60,7 +60,7 @@ if "rob_ray" not in st.session_state:
 if "hat_trick_player" not in st.session_state:
     st.session_state.hat_trick_player = None
 if "hat_trick_celebrated" not in st.session_state:
-    st.session_state.hat_trick_celebrated = []   # players already toasted
+    st.session_state.hat_trick_celebrated = []
 
 def update_stats(goal):
     stats  = st.session_state.stats
@@ -77,9 +77,7 @@ def update_stats(goal):
     for assistant in goal["assists"]:
         add(assistant, a=1)
 
-    # Hat trick check — fire once per player per session
-    if (stats[scorer]["G"] == 3
-            and scorer not in st.session_state.hat_trick_celebrated):
+    if stats[scorer]["G"] == 3 and scorer not in st.session_state.hat_trick_celebrated:
         st.session_state.hat_trick_player = scorer
         st.session_state.hat_trick_celebrated.append(scorer)
     else:
@@ -181,39 +179,36 @@ if st.session_state.rob_ray:
     components.html(ROB_RAY_FIREWORKS, height=0)
 
 if st.session_state.hat_trick_player:
+    _player = st.session_state.hat_trick_player
+    st.session_state.hat_trick_player = None   # clear immediately so it never re-fires
     components.html(f"""
     <script>
     (function() {{
       const pdoc   = window.parent.document;
       const banner = pdoc.createElement('div');
-      banner.id    = 'ht-banner';
-      banner.textContent = '🎩 HAT TRICK — {st.session_state.hat_trick_player} 🎩';
+      banner.textContent = '🎩 HAT TRICK — {_player} 🎩';
       banner.style.cssText = `
-        position:fixed;
-        top:50%; left:50%;
+        position:fixed; top:50%; left:50%;
         transform:translate(-50%, -50%) scale(0.5);
         z-index:99998;
         background: linear-gradient(135deg, #FCB514, #FFD966, #FCB514);
         color:#003087; text-align:center;
         font-size:52px; font-weight:900; letter-spacing:3px;
-        padding:40px 60px;
-        border-radius:20px;
+        padding:40px 60px; border-radius:20px;
         box-shadow:0 12px 48px rgba(0,0,0,0.6);
-        opacity:0;
+        opacity:0; font-family:sans-serif; line-height:1.3; white-space:nowrap;
         transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease-out;
-        font-family: sans-serif; line-height:1.3;
-        white-space:nowrap;
       `;
       pdoc.body.appendChild(banner);
       requestAnimationFrame(() => {{
         banner.style.transform = 'translate(-50%, -50%) scale(1)';
-        banner.style.opacity   = '1';
+        banner.style.opacity = '1';
       }});
       setTimeout(() => {{
-        banner.style.transition = 'opacity 0.8s';
-        banner.style.opacity    = '0';
-        setTimeout(() => banner.remove(), 800);
-      }}, 3500);
+        banner.style.transition = 'opacity 0.4s';
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 400);
+      }}, 1000);
     }})();
     </script>
     """, height=0)
