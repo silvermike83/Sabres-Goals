@@ -98,13 +98,37 @@ st.title("🏒 Sabres Goal")
 goals = load_goals()
 st.caption(f"Random goal from {len(goals):,} Sabres goals (regular season + playoffs), 1990–91 through 2025–26.")
 
+# ── Opponent filter ────────────────────────────────────────────────────────────
+
+def opponent_of(goal):
+    """Return the non-BUF team abbreviation."""
+    return goal["home_abbrev"] if goal["away_abbrev"] == "BUF" else goal["away_abbrev"]
+
+all_opponents = sorted(set(opponent_of(g) for g in goals))
+opponent_options = ["Any opponent"] + all_opponents
+
+selected_opponent = st.selectbox(
+    "Filter by opponent",
+    options=opponent_options,
+    index=0,
+    label_visibility="collapsed",
+)
+
+filtered_goals = (
+    goals if selected_opponent == "Any opponent"
+    else [g for g in goals if opponent_of(g) == selected_opponent]
+)
+
 # ── Button ─────────────────────────────────────────────────────────────────────
 
 if st.button("🎲  Random Goal", type="primary", use_container_width=True):
-    goal = random.choice(goals)
-    st.session_state.last_goal = goal
-    st.session_state.rob_ray = (goal["scorer"].strip().lower() == "rob ray")
-    update_stats(goal)
+    if not filtered_goals:
+        st.warning("No goals found for that opponent.")
+    else:
+        goal = random.choice(filtered_goals)
+        st.session_state.last_goal = goal
+        st.session_state.rob_ray = (goal["scorer"].strip().lower() == "rob ray")
+        update_stats(goal)
 
 # ── Goal display ───────────────────────────────────────────────────────────────
 
