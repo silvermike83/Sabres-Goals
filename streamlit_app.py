@@ -242,47 +242,46 @@ if goal:
     away_logo = f"https://assets.nhle.com/logos/nhl/svg/{away_abbrev}_light.svg"
     home_logo = f"https://assets.nhle.com/logos/nhl/svg/{home_abbrev}_light.svg"
 
-    # Score line — only show if available in cache
-    if away_score is not None and home_score is not None:
-        score_html = f"""
-        <div style="display:flex; align-items:center; gap:16px; margin-bottom:1rem;">
-          <img src="{away_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
-          <span style="font-size:1.6rem; font-weight:900; letter-spacing:2px;">
-            {away_abbrev} {away_score} &nbsp;—&nbsp; {home_score} {home_abbrev}
-          </span>
-          <img src="{home_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
-        </div>"""
-    else:
-        score_html = f"""
-        <div style="display:flex; align-items:center; gap:16px; margin-bottom:1rem;">
-          <img src="{away_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
-          <span style="font-size:1.1rem; font-weight:600;">{away_abbrev} @ {home_abbrev}</span>
-          <img src="{home_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
-        </div>"""
+    lbl = f'font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:{accent}; margin-bottom:0.15rem;'
+    val = 'font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;'
 
-    st.markdown(f"""
-    <div style="background:{bg}; border-radius:12px; padding:1.5rem 2rem;
-                margin:1rem 0; color:white;">
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
-                    color:{accent}; margin-bottom:0.15rem;">Season</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{season_str} &nbsp;·&nbsp; {date_str}</div>
-        {score_html}
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
-                    color:{accent}; margin-bottom:0.15rem;">Time</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{period} &nbsp;·&nbsp; {time_str}</div>
-        {"" if not goal.get("final") else f'''
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
-                    color:{accent}; margin-bottom:0.15rem;">Final</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{goal["final"]}</div>
-        '''}
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
-                    color:{accent}; margin-bottom:0.15rem;">Goal</div>
-        <div style="font-size:1.4rem; font-weight:700; color:{accent}; margin-bottom:0.25rem;">⚡ {goal['scorer']}</div>
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
-                    color:{accent}; margin-bottom:0.15rem;">Assists</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0;">🍎 {assist_str}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    h = []
+    h.append(f'<div style="background:{bg}; border-radius:12px; padding:1.5rem 2rem; margin:1rem 0; color:white;">')
+
+    # Season + date
+    h.append(f'<div style="{lbl}">Season</div>')
+    h.append(f'<div style="{val}">{season_str} &middot; {date_str}</div>')
+
+    # Logos + score/matchup
+    h.append('<div style="margin-bottom:1rem;">')
+    h.append(f'<img src="{away_logo}" height="40" style="vertical-align:middle; margin-right:10px;">')
+    if away_score is not None and home_score is not None:
+        h.append(f'<strong style="font-size:1.4rem; letter-spacing:1px;">{away_abbrev} {away_score} &ndash; {home_score} {home_abbrev}</strong>')
+    else:
+        h.append(f'<strong style="font-size:1.1rem;">{away_abbrev} @ {home_abbrev}</strong>')
+    h.append(f'<img src="{home_logo}" height="40" style="vertical-align:middle; margin-left:10px;">')
+    h.append('</div>')
+
+    # Period + time
+    h.append(f'<div style="{lbl}">Time</div>')
+    h.append(f'<div style="{val}">{period} &middot; {time_str}</div>')
+
+    # Final result
+    if goal.get("final"):
+        h.append(f'<div style="{lbl}">Final</div>')
+        h.append(f'<div style="{val}">{goal["final"]}</div>')
+
+    # Scorer
+    h.append(f'<div style="{lbl}">Goal</div>')
+    h.append(f'<div style="font-size:1.4rem; font-weight:700; color:{accent}; margin-bottom:0.25rem;">&#9889; {goal["scorer"]}</div>')
+
+    # Assists
+    h.append(f'<div style="{lbl}">Assists</div>')
+    h.append(f'<div style="font-size:1.1rem; font-weight:600; margin-bottom:0;">&#127822; {assist_str}</div>')
+
+    h.append('</div>')
+
+    st.markdown("".join(h), unsafe_allow_html=True)
 
 # ── Leaderboard ────────────────────────────────────────────────────────────────
 
