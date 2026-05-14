@@ -189,13 +189,14 @@ if st.session_state.hat_trick_player:
       banner.id    = 'ht-banner';
       banner.textContent = '🎩 HAT TRICK — {st.session_state.hat_trick_player} 🎩';
       banner.style.cssText = `
-        position:fixed; top:0; left:0; width:100%; z-index:99998;
+        position:fixed; top:0; left:0; width:100vw; z-index:99998;
         background: linear-gradient(90deg, #FCB514, #FFD966, #FCB514);
         color:#003087; text-align:center;
-        font-size:2rem; font-weight:900; letter-spacing:0.05em;
-        padding:0.6rem 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);
+        font-size:42px; font-weight:900; letter-spacing:3px;
+        padding:24px 0; box-shadow:0 6px 24px rgba(0,0,0,0.4);
         transform:translateY(-100%); opacity:0;
         transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+        font-family: sans-serif; line-height:1.2;
       `;
       pdoc.body.appendChild(banner);
       requestAnimationFrame(() => {{
