@@ -82,6 +82,9 @@ def extract_goals(pbp):
     else:
         final_str = None
 
+    # Game-winning goal: BUF won AND this goal put BUF one ahead of opp's final total
+    buf_won = buf_final is not None and opp_final is not None and buf_final > opp_final
+
     for play in pbp.get("plays", []):
         if play.get("typeDescKey") != "goal":
             continue
@@ -107,8 +110,18 @@ def extract_goals(pbp):
         scorer  = players.get(scorer_id, f"#{scorer_id}")
         assists = [players.get(a, f"#{a}") for a in [assist1_id, assist2_id] if a]
 
+        # Is this goal a GWG? Yes if BUF won AND buf_score_at_goal == opp_final + 1
+        buf_score_at_goal = details.get("homeScore" if buf_is_home else "awayScore")
+        is_gwg = bool(
+            buf_won
+            and buf_score_at_goal is not None
+            and opp_final is not None
+            and buf_score_at_goal == opp_final + 1
+        )
+
         goals.append({
             "season":      pbp.get("season", ""),
+            "game_type":   pbp.get("gameType", 2),   # 2 = regular, 3 = playoffs
             "date":        game_date,
             "matchup":     f"{away_abbrev} @ {home_abbrev}",
             "away_abbrev": away_abbrev,
@@ -122,6 +135,7 @@ def extract_goals(pbp):
             "away_score":  details.get("awayScore"),
             "home_score":  details.get("homeScore"),
             "final":       final_str,
+            "is_gwg":      is_gwg,
         })
 
     return goals
@@ -155,7 +169,7 @@ def fetch_season(season, cache, force=False):
         completed = [
             g for g in schedule.get("games", [])
             if g.get("gameState") in ("OFF", "FINAL", "CRIT")
-            and g.get("gameType") == 2
+            and g.get("gameType") in (2, 3)   # 2 = regular season, 3 = playoffs
         ]
     except Exception as e:
         print(f"  {season_label(season)}  schedule ERROR: {e}")

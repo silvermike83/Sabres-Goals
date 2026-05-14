@@ -96,7 +96,7 @@ st.set_page_config(
 st.title("🏒 Sabres Goal")
 
 goals = load_goals()
-st.caption(f"Random goal from {len(goals):,} Sabres regular-season goals, 1990–91 through 2025–26.")
+st.caption(f"Random goal from {len(goals):,} Sabres goals (regular season + playoffs), 1990–91 through 2025–26.")
 
 # ── Button ─────────────────────────────────────────────────────────────────────
 
@@ -246,8 +246,19 @@ if goal:
     lbl = f'font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:{accent}; margin-bottom:0.15rem;'
     val = 'font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;'
 
+    is_playoff = goal.get("game_type") == 3
+    is_gwg     = goal.get("is_gwg", False)
+
     h = []
     h.append(f'<div style="background:{bg}; border-radius:12px; padding:1.5rem 2rem; margin:1rem 0; color:white;">')
+
+    # Playoffs badge (top of card)
+    if is_playoff:
+        h.append(
+            f'<div style="display:inline-block; background:{accent}; color:{bg}; '
+            f'font-size:0.7rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; '
+            f'padding:3px 10px; border-radius:4px; margin-bottom:0.8rem;">🏆 Playoffs</div>'
+        )
 
     # Season + date
     h.append(f'<div style="{lbl}">Season</div>')
@@ -274,9 +285,15 @@ if goal:
     h.append(f'<div style="{lbl}">Final</div>')
     h.append(f'<div style="{val}">{goal.get("final") or "&mdash;"}</div>')
 
-    # Scorer
+    # Scorer + optional GWG tag
+    gwg_badge = (
+        f' <span style="font-size:0.65rem; font-weight:800; letter-spacing:0.08em; '
+        f'text-transform:uppercase; background:{accent}; color:{bg}; '
+        f'padding:2px 7px; border-radius:4px; vertical-align:middle; margin-left:6px;">GWG</span>'
+        if is_gwg else ""
+    )
     h.append(f'<div style="{lbl}">Goal</div>')
-    h.append(f'<div style="font-size:1.4rem; font-weight:700; color:{accent}; margin-bottom:0.25rem;">&#9889; {goal["scorer"]}</div>')
+    h.append(f'<div style="font-size:1.4rem; font-weight:700; color:{accent}; margin-bottom:0.25rem;">&#9889; {goal["scorer"]}{gwg_badge}</div>')
 
     # Assists
     h.append(f'<div style="{lbl}">Assists</div>')
