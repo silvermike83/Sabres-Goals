@@ -113,7 +113,7 @@ ROB_RAY_FIREWORKS = """
 (function() {
   const pdoc = window.parent.document;
   const canvas = pdoc.createElement('canvas');
-  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:auto;z-index:99999;cursor:pointer;';
   pdoc.body.appendChild(canvas);
 
   const pw  = window.parent.innerWidth;
@@ -152,7 +152,15 @@ ROB_RAY_FIREWORKS = """
     if (++fired >= bursts) clearInterval(interval);
   }, 250);
 
+  let animating = true;
+  function dismiss() {
+    animating = false;
+    canvas.remove();
+  }
+  canvas.addEventListener('click', dismiss, { once: true });
+
   function loop() {
+    if (!animating) return;
     ctx.clearRect(0, 0, pw, ph);
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
