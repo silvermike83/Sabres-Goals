@@ -204,11 +204,13 @@ if st.session_state.hat_trick_player:
         banner.style.transform = 'translate(-50%, -50%) scale(1)';
         banner.style.opacity = '1';
       }});
-      setTimeout(() => {{
+      function dismiss() {{
         banner.style.transition = 'opacity 0.4s';
         banner.style.opacity = '0';
         setTimeout(() => banner.remove(), 400);
-      }}, 1000);
+      }}
+      setTimeout(dismiss, 1000);
+      pdoc.addEventListener('click', dismiss, {{ once: true }});
     }})();
     </script>
     """, height=0)
