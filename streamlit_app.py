@@ -26,6 +26,25 @@ def season_label(season):
     s = str(season)
     return f"{s[:4]}-{s[6:]}" if len(s) == 8 else s
 
+# Sabres color eras:
+#   Classic        1970-71 – 1995-96  royal blue + gold
+#   Red & Black    1996-97 – 2005-06  black + red
+#   Modern         2006-07 – present  royal blue + gold
+ERA_COLORS = {
+    "classic": {"bg": "#003087", "accent": "#FCB514", "label": "Classic (pre-1996)"},
+    "red":     {"bg": "#111111", "accent": "#CC0000", "label": "Red & Black Era (1996–2006)"},
+    "modern":  {"bg": "#003087", "accent": "#FCB514", "label": "Modern (2006–present)"},
+}
+
+def era_for_season(season):
+    start = int(str(season)[:4]) if season else 9999
+    if start < 1996:
+        return ERA_COLORS["classic"]
+    elif start < 2006:
+        return ERA_COLORS["red"]
+    else:
+        return ERA_COLORS["modern"]
+
 # ── Session state init ─────────────────────────────────────────────────────────
 
 if "stats" not in st.session_state:
@@ -38,9 +57,14 @@ if "show_all" not in st.session_state:
     st.session_state.show_all = False
 if "rob_ray" not in st.session_state:
     st.session_state.rob_ray = False
+if "hat_trick_player" not in st.session_state:
+    st.session_state.hat_trick_player = None
+if "hat_trick_celebrated" not in st.session_state:
+    st.session_state.hat_trick_celebrated = []   # players already toasted
 
 def update_stats(goal):
-    stats = st.session_state.stats
+    stats  = st.session_state.stats
+    scorer = goal["scorer"]
 
     def add(player, g=0, a=0):
         if player not in stats:
@@ -49,9 +73,17 @@ def update_stats(goal):
         stats[player]["A"] += a
         stats[player]["P"] += g + a
 
-    add(goal["scorer"], g=1)
+    add(scorer, g=1)
     for assistant in goal["assists"]:
         add(assistant, a=1)
+
+    # Hat trick check — fire once per player per session
+    if (stats[scorer]["G"] == 3
+            and scorer not in st.session_state.hat_trick_celebrated):
+        st.session_state.hat_trick_player = scorer
+        st.session_state.hat_trick_celebrated.append(scorer)
+    else:
+        st.session_state.hat_trick_player = None
 
 # ── Page config ────────────────────────────────────────────────────────────────
 
@@ -60,36 +92,6 @@ st.set_page_config(
     page_icon="🏒",
     layout="centered",
 )
-
-st.markdown("""
-<style>
-    .goal-box {
-        background: #003087;
-        border-radius: 12px;
-        padding: 1.5rem 2rem;
-        margin: 1rem 0;
-        color: white;
-    }
-    .goal-box .label {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #fcb514;
-        margin-bottom: 0.15rem;
-    }
-    .goal-box .value {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 0.9rem;
-    }
-    .goal-box .scorer {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #fcb514;
-        margin-bottom: 0.25rem;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 
@@ -178,6 +180,34 @@ ROB_RAY_FIREWORKS = """
 if st.session_state.rob_ray:
     components.html(ROB_RAY_FIREWORKS, height=0)
 
+if st.session_state.hat_trick_player:
+    components.html(f"""
+    <div id="ht-banner" style="
+        position:fixed; top:0; left:0; width:100%; z-index:9998;
+        background: linear-gradient(90deg, #FCB514, #FFD966, #FCB514);
+        color: #003087; text-align:center;
+        font-size:2rem; font-weight:900; letter-spacing:0.05em;
+        padding:0.6rem 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);
+        animation: slideDown 0.4s ease-out;
+    ">
+        🎩 HAT TRICK — {st.session_state.hat_trick_player} 🎩
+    </div>
+    <style>
+      @keyframes slideDown {{
+        from {{ transform: translateY(-100%); opacity:0; }}
+        to   {{ transform: translateY(0);    opacity:1; }}
+      }}
+    </style>
+    <script>
+      setTimeout(() => {{
+        const b = document.getElementById('ht-banner');
+        b.style.transition = 'opacity 0.8s';
+        b.style.opacity = '0';
+        setTimeout(() => b.remove(), 800);
+      }}, 3500);
+    </script>
+    """, height=0)
+
 goal = st.session_state.last_goal
 if goal:
     date_str = goal.get("date", "")
@@ -193,19 +223,28 @@ if goal:
     period      = goal.get("period", "")
     time_str    = goal.get("time", "")
     matchup     = goal.get("matchup", "")
+    era         = era_for_season(goal.get("season"))
+    bg          = era["bg"]
+    accent      = era["accent"]
 
     st.markdown(f"""
-    <div class="goal-box">
-        <div class="label">Season</div>
-        <div class="value">{season_str}</div>
-        <div class="label">Date &amp; Matchup</div>
-        <div class="value">{date_str} &nbsp;·&nbsp; {matchup}</div>
-        <div class="label">Time</div>
-        <div class="value">{period} &nbsp;·&nbsp; {time_str} &nbsp;·&nbsp; {strength}</div>
-        <div class="label">Goal</div>
-        <div class="scorer">⚡ {goal['scorer']}</div>
-        <div class="label">Assists</div>
-        <div class="value">🍎 {assist_str}</div>
+    <div style="background:{bg}; border-radius:12px; padding:1.5rem 2rem;
+                margin:1rem 0; color:white;">
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
+                    color:{accent}; margin-bottom:0.15rem;">Season</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{season_str}</div>
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
+                    color:{accent}; margin-bottom:0.15rem;">Date &amp; Matchup</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{date_str} &nbsp;·&nbsp; {matchup}</div>
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
+                    color:{accent}; margin-bottom:0.15rem;">Time</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{period} &nbsp;·&nbsp; {time_str} &nbsp;·&nbsp; {strength}</div>
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
+                    color:{accent}; margin-bottom:0.15rem;">Goal</div>
+        <div style="font-size:1.4rem; font-weight:700; color:{accent}; margin-bottom:0.25rem;">⚡ {goal['scorer']}</div>
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
+                    color:{accent}; margin-bottom:0.15rem;">Assists</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0;">🍎 {assist_str}</div>
     </div>
     """, unsafe_allow_html=True)
 
