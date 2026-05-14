@@ -226,29 +226,55 @@ if goal:
     except Exception:
         pass
 
-    season_str  = season_label(goal.get("season", "")) if goal.get("season") else "—"
-    assists     = goal.get("assists", [])
-    assist_str  = ", ".join(assists) if assists else "Unassisted"
-    strength    = goal.get("strength", "EV")
-    period      = goal.get("period", "")
-    time_str    = goal.get("time", "")
-    matchup     = goal.get("matchup", "")
-    era         = era_for_season(goal.get("season"))
-    bg          = era["bg"]
-    accent      = era["accent"]
+    season_str   = season_label(goal.get("season", "")) if goal.get("season") else "—"
+    assists      = goal.get("assists", [])
+    assist_str   = ", ".join(assists) if assists else "Unassisted"
+    period       = goal.get("period", "")
+    time_str     = goal.get("time", "")
+    away_abbrev  = goal.get("away_abbrev") or goal.get("matchup", "@ ").split(" @ ")[0]
+    home_abbrev  = goal.get("home_abbrev") or goal.get("matchup", "@ ").split(" @ ")[-1]
+    away_score   = goal.get("away_score")
+    home_score   = goal.get("home_score")
+    era          = era_for_season(goal.get("season"))
+    bg           = era["bg"]
+    accent       = era["accent"]
+
+    away_logo = f"https://assets.nhle.com/logos/nhl/svg/{away_abbrev}_light.svg"
+    home_logo = f"https://assets.nhle.com/logos/nhl/svg/{home_abbrev}_light.svg"
+
+    # Score line — only show if available in cache
+    if away_score is not None and home_score is not None:
+        score_html = f"""
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:1rem;">
+          <img src="{away_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
+          <span style="font-size:1.6rem; font-weight:900; letter-spacing:2px;">
+            {away_abbrev} {away_score} &nbsp;—&nbsp; {home_score} {home_abbrev}
+          </span>
+          <img src="{home_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
+        </div>"""
+    else:
+        score_html = f"""
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:1rem;">
+          <img src="{away_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
+          <span style="font-size:1.1rem; font-weight:600;">{away_abbrev} @ {home_abbrev}</span>
+          <img src="{home_logo}" style="height:48px; width:auto;" onerror="this.style.display='none'">
+        </div>"""
 
     st.markdown(f"""
     <div style="background:{bg}; border-radius:12px; padding:1.5rem 2rem;
                 margin:1rem 0; color:white;">
         <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
                     color:{accent}; margin-bottom:0.15rem;">Season</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{season_str}</div>
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
-                    color:{accent}; margin-bottom:0.15rem;">Date &amp; Matchup</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{date_str} &nbsp;·&nbsp; {matchup}</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{season_str} &nbsp;·&nbsp; {date_str}</div>
+        {score_html}
         <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
                     color:{accent}; margin-bottom:0.15rem;">Time</div>
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{period} &nbsp;·&nbsp; {time_str} &nbsp;·&nbsp; {strength}</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{period} &nbsp;·&nbsp; {time_str}</div>
+        {"" if not goal.get("final") else f'''
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
+                    color:{accent}; margin-bottom:0.15rem;">Final</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;">{goal["final"]}</div>
+        '''}
         <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em;
                     color:{accent}; margin-bottom:0.15rem;">Goal</div>
         <div style="font-size:1.4rem; font-weight:700; color:{accent}; margin-bottom:0.25rem;">⚡ {goal['scorer']}</div>
