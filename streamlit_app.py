@@ -239,8 +239,12 @@ if goal:
     bg           = era["bg"]
     accent       = era["accent"]
 
-    away_logo = f"https://assets.nhle.com/logos/nhl/svg/{away_abbrev}_light.svg"
-    home_logo = f"https://assets.nhle.com/logos/nhl/svg/{home_abbrev}_light.svg"
+    # Use logo URLs stored in cache (historically accurate); fall back to CDN pattern
+    away_logo = goal.get("away_logo") or f"https://assets.nhle.com/logos/nhl/svg/{away_abbrev}_light.svg"
+    home_logo = goal.get("home_logo") or f"https://assets.nhle.com/logos/nhl/svg/{home_abbrev}_light.svg"
+
+    # White badge wrapping ensures logo visibility on any background colour
+    badge = 'background:white; border-radius:6px; padding:3px 5px; display:inline-block; line-height:0; vertical-align:middle;'
 
     lbl = f'font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:{accent}; margin-bottom:0.15rem;'
     val = 'font-size:1.1rem; font-weight:600; margin-bottom:0.9rem;'
@@ -252,24 +256,26 @@ if goal:
     h.append(f'<div style="{lbl}">Season</div>')
     h.append(f'<div style="{val}">{season_str} &middot; {date_str}</div>')
 
-    # Logos + score/matchup
-    h.append('<div style="margin-bottom:1rem;">')
-    h.append(f'<img src="{away_logo}" height="40" style="vertical-align:middle; margin-right:10px;">')
-    if away_score is not None and home_score is not None:
-        h.append(f'<strong style="font-size:1.4rem; letter-spacing:1px;">{away_abbrev} {away_score} &ndash; {home_score} {home_abbrev}</strong>')
-    else:
-        h.append(f'<strong style="font-size:1.1rem;">{away_abbrev} @ {home_abbrev}</strong>')
-    h.append(f'<img src="{home_logo}" height="40" style="vertical-align:middle; margin-left:10px;">')
+    # Logos + matchup
+    h.append(f'<div style="{lbl}">Matchup</div>')
+    h.append('<div style="margin-bottom:0.9rem;">')
+    h.append(f'<span style="{badge}"><img src="{away_logo}" height="36"></span>')
+    h.append(f'<strong style="font-size:1.1rem; margin:0 10px;">{away_abbrev} @ {home_abbrev}</strong>')
+    h.append(f'<span style="{badge}"><img src="{home_logo}" height="36"></span>')
     h.append('</div>')
+
+    # Score at time of goal
+    if away_score is not None and home_score is not None:
+        h.append(f'<div style="{lbl}">Score at Goal</div>')
+        h.append(f'<div style="{val}">{away_abbrev} {away_score} &ndash; {home_score} {home_abbrev}</div>')
 
     # Period + time
     h.append(f'<div style="{lbl}">Time</div>')
     h.append(f'<div style="{val}">{period} &middot; {time_str}</div>')
 
-    # Final result
-    if goal.get("final"):
-        h.append(f'<div style="{lbl}">Final</div>')
-        h.append(f'<div style="{val}">{goal["final"]}</div>')
+    # Final result — always show row, use em-dash fallback if not in cache
+    h.append(f'<div style="{lbl}">Final</div>')
+    h.append(f'<div style="{val}">{goal.get("final") or "&mdash;"}</div>')
 
     # Scorer
     h.append(f'<div style="{lbl}">Goal</div>')

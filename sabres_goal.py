@@ -68,6 +68,9 @@ def extract_goals(pbp):
     game_date        = pbp.get("gameDate", "")
     away_abbrev      = away.get("abbrev", "???")
     home_abbrev      = home.get("abbrev", "???")
+    # Store logo URLs directly from API — gives correct historical logo per game
+    away_logo_url    = away.get("logo", f"https://assets.nhle.com/logos/nhl/svg/{away_abbrev}_light.svg")
+    home_logo_url    = home.get("logo", f"https://assets.nhle.com/logos/nhl/svg/{home_abbrev}_light.svg")
     final_away_score = away.get("score")
     final_home_score = home.get("score")
     buf_is_home      = (buf_id == home.get("id"))
@@ -75,7 +78,7 @@ def extract_goals(pbp):
     opp_final        = final_away_score if buf_is_home else final_home_score
     if buf_final is not None and opp_final is not None:
         result = "W" if buf_final > opp_final else "L"
-        final_str = f"{away_abbrev} {final_away_score}–{final_home_score} {home_abbrev} ({result})"
+        final_str = f"{away_abbrev} {final_away_score}-{final_home_score} {home_abbrev} ({result})"
     else:
         final_str = None
 
@@ -110,6 +113,8 @@ def extract_goals(pbp):
             "matchup":     f"{away_abbrev} @ {home_abbrev}",
             "away_abbrev": away_abbrev,
             "home_abbrev": home_abbrev,
+            "away_logo":   away_logo_url,
+            "home_logo":   home_logo_url,
             "period":      period_str,
             "time":        play.get("timeInPeriod", "?:??"),
             "scorer":      scorer,
